@@ -6,21 +6,17 @@ const instagramSelectors = {
   header: '#socialblade-user-content > div:nth-child(3) > h2',
   date: 'div[style="width: 80px; float: left;"]',
   subscribers: 'div[style="width: 120px; float: left;"]',
-  mediaUploads:
-    '#YouTubeUserTopInfoBlock > div:nth-child(2) > span:nth-child(3)',
-  engagementRate:
-    '#YouTubeUserTopInfoBlock > div:nth-child(5) > span:nth-child(4)',
+  mediaUploads: '#YouTubeUserTopInfoBlock > div:nth-child(2) > span:nth-child(3)',
+  engagementRate: '#YouTubeUserTopInfoBlock > div:nth-child(5) > span:nth-child(4)',
   likes: '#YouTubeUserTopInfoBlock > div:nth-child(6) > span:nth-child(3)',
   comments: '#YouTubeUserTopInfoBlock > div:nth-child(7) > span:nth-child(3)',
 }
 
 const youtubeSelectors = {
   rows: 'div[style*="width: 860px; height: 3"]',
-  header:
-    '#socialblade-user-content > div:nth-child(1) > div:nth-child(3) > h2',
+  header: '#socialblade-user-content > div:nth-child(1) > div:nth-child(3) > h2',
   date: 'div[style="float: left; width: 95px;"]',
-  subscribers:
-    '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
+  subscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
   videoViews: 'div:nth-child(4) > div:nth-child(2)',
 }
 
