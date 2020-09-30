@@ -1,74 +1,71 @@
-const brands = ['ploom', 'iqos', 'glo']
-const sources = ['youtube', 'instagram']
+function setupConstants() {
+  const brands = ['ploom', 'iqos', 'glo']
+  const sources = ['youtube', 'instagram']
 
-const instagramSelectors = {
-  rows: 'div[style*="width: 860px; height: 3"]',
-  header: '#socialblade-user-content > div:nth-child(3) > h2',
-  date: 'div[style="width: 80px; float: left;"]',
-  historySubscribers: 'div[style="width: 120px; float: left;"]',
-  summarySubscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
-  summaryMediaUploads: '#YouTubeUserTopInfoBlock > div:nth-child(2) > span:nth-child(3)',
-  historyMediaUploads: 'div:nth-child(4) > div:nth-child(2)',
-  engagementRate: '#YouTubeUserTopInfoBlock > div:nth-child(5) > span:nth-child(4)',
-  likes: '#YouTubeUserTopInfoBlock > div:nth-child(6) > span:nth-child(3)',
-  comments: '#YouTubeUserTopInfoBlock > div:nth-child(7) > span:nth-child(3)',
-  handle: '#YouTubeUserTopInfoBlockTop > div:nth-child(1) > h2 > a',
-}
-
-const youtubeSelectors = {
-  rows: 'div[style*="width: 860px; height: 3"]',
-  header: '#socialblade-user-content > div:nth-child(1) > div:nth-child(3) > h2',
-  date: 'div[style="float: left; width: 95px;"]',
-  subscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
-  videoViews: 'div:nth-child(4) > div:nth-child(2)',
-}
-
-// Extract source from location.
-const source = sources.find((source) => window.location.pathname.toLowerCase().includes(source))
-
-/**
- * Extension entry point.
- * Check current `source`, extract all data.
- * Copy result JSON to buffer.
- */
-;(function main() {
-  let rows
-  let header
-
-  if (source === 'instagram') {
-    rows = document.querySelectorAll(instagramSelectors.rows)
-    header = document.querySelector(instagramSelectors.header)
-  } else {
-    rows = document.querySelectorAll(youtubeSelectors.rows)
-    header = document.querySelector(youtubeSelectors.header)
+  const instagramSelectors = {
+    rows: 'div[style*="width: 860px; height: 3"]',
+    header: '#socialblade-user-content > div:nth-child(3) > h2',
+    date: 'div[style="width: 80px; float: left;"]',
+    historySubscribers: 'div[style="width: 120px; float: left;"]',
+    summarySubscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
+    summaryMediaUploads: '#YouTubeUserTopInfoBlock > div:nth-child(2) > span:nth-child(3)',
+    historyMediaUploads: 'div:nth-child(4) > div:nth-child(2)',
+    engagementRate: '#YouTubeUserTopInfoBlock > div:nth-child(5) > span:nth-child(4)',
+    likes: '#YouTubeUserTopInfoBlock > div:nth-child(6) > span:nth-child(3)',
+    comments: '#YouTubeUserTopInfoBlock > div:nth-child(7) > span:nth-child(3)',
+    handle: '#YouTubeUserTopInfoBlockTop > div:nth-child(1) > h2 > a',
   }
 
+  const youtubeSelectors = {
+    rows: 'div[style*="width: 860px; height: 3"]',
+    header: '#socialblade-user-content > div:nth-child(1) > div:nth-child(3) > h2',
+    date: 'div[style="float: left; width: 95px;"]',
+    subscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
+    videoViews: 'div:nth-child(4) > div:nth-child(2)[style="width: 140px; float: left;"]',
+  }
+
+  // Extract source from location.
+  const source = sources.find((source) => window.location.pathname.toLowerCase().includes(source))
+
+  return {
+    brands,
+    sources,
+    instagramSelectors,
+    youtubeSelectors,
+    source,
+  }
+}
+
+/**
+ * Extension entry point. Extract all data.
+ * Copy result JSON to buffer.
+ * @return {{}}
+ */
+;(function main() {
   // Make copy to buffer.
-  copy(JSON.stringify(getData(rows, header)))
+  copy(getData())
 })()
 
 /**
  * Extract data from table depends on `source`.
- * @param rows List with table rows selectors.
- * @param header SocialBlade block with info about source.
- * @return {{history: *[], statSummary: {}}}
- * List with scraped objects from page.
+ * @return {{history: *[], statSummary: {}}} List with scraped objects from page.
  */
-function getData(rows, header) {
+function getData() {
   const historyData = []
+
+  const { brands, sources, source, ...rest } = setupConstants()
 
   // Get SocialBlade data.
   if (source === 'youtube') {
+    const { youtubeSelectors, ...rest } = setupConstants()
+    const rows = document.querySelectorAll(youtubeSelectors.rows)
+    const header = document.querySelector(youtubeSelectors.header)
+
     for (const row of rows) {
       historyData.push({
-        ...getYoutubeData(row, header),
+        ...getYoutubeData(row, header, brands, youtubeSelectors),
       })
     }
-
-    console.log({
-      history: [...historyData],
-      statSummary: {},
-    })
 
     return {
       history: [...historyData],
@@ -77,20 +74,19 @@ function getData(rows, header) {
   }
 
   if (source === 'instagram') {
+    const { instagramSelectors, ...rest } = setupConstants()
+    const rows = document.querySelectorAll(instagramSelectors.rows)
+    const header = document.querySelector(instagramSelectors.header)
+
     for (const row of rows) {
       historyData.push({
-        ...getInstagramHistoryData(row, header),
+        ...getInstagramHistoryData(row, header, brands, instagramSelectors),
       })
     }
 
-    console.log({
-      history: [...historyData],
-      statSummary: { ...getInstagramSummary() },
-    })
-
     return {
       history: [...historyData],
-      statSummary: { ...getInstagramSummary() },
+      statSummary: { ...getInstagramSummary(instagramSelectors) },
     }
   }
 }
@@ -99,9 +95,11 @@ function getData(rows, header) {
  * Extract history data for SocialBlade Instagram source.
  * @param row Table row selector.
  * @param header SocialBlade block with info about source.
+ * @param brands Array of possible brands.
+ * @param instagramSelectors Object with selectors for `instagram` source.
  * @return {Object} Object with scraped data.
  */
-function getInstagramHistoryData(row, header) {
+function getInstagramHistoryData(row, header, brands, instagramSelectors) {
   const date = row.querySelector(instagramSelectors.date).textContent
 
   // Clean up subscribers count.
@@ -130,7 +128,7 @@ function getInstagramHistoryData(row, header) {
     handle,
     likes: avgLikes,
     mediaUploads,
-    source,
+    source: 'instagram',
     followers: intSubscribers,
     type: 'history',
   }
@@ -140,7 +138,7 @@ function getInstagramHistoryData(row, header) {
  * Extract summary data for SocialBlade Instagram source.
  * @return {Object} Object with Instagram summary data.
  */
-function getInstagramSummary() {
+function getInstagramSummary(instagramSelectors) {
   // Clean up subscribers count.
   const rawSubscribers = document.querySelector(instagramSelectors.summarySubscribers).textContent
   const intSubscribers = +rawSubscribers.trim().replace(',', '')
@@ -158,16 +156,18 @@ function getInstagramSummary() {
  * Extract history data for YouTube Instagram source.
  * @param row Table row selector.
  * @param header SocialBlade block with info about source.
+ * @param brands Array of possible brands.
+ * @param youtubeSelectors Object with selectors for `youtube` source.
  * @return {Object} Object with scraped data.
  */
-function getYoutubeData(row, header) {
+function getYoutubeData(row, header, brands, youtubeSelectors) {
   const date = row.querySelector(youtubeSelectors.date).textContent
 
   const currentBrand = brands.find((brand) => header.textContent.toLowerCase().includes(brand))
 
   // Clean up views.
   const rawVideoViews = row.querySelector(youtubeSelectors.videoViews).textContent
-  const intVideoViews = rawVideoViews.replace(',', '')
+  const intVideoViews = +rawVideoViews.replace(',', '')
 
   // Clean up subscribers count.
   const rawSubscribers = document.querySelector(youtubeSelectors.subscribers).textContent.trim()
@@ -181,7 +181,7 @@ function getYoutubeData(row, header) {
     date: toTimestamp(date),
     handle,
     type: 'history',
-    source,
+    source: 'youtube',
     subscribers: Math.ceil(parseFloat(intSubscribers) * 1000),
     videoViews: intVideoViews,
   }
@@ -201,16 +201,18 @@ function toTimestamp(strDate) {
 
 /**
  * Provide ability to copy data to buffer.
- * @param text JSON object for copy.
+ * @param resultObject Object for copy.
  * @return {boolean}
  */
-function copy(text) {
+function copy(resultObject) {
   const input = document.createElement('textarea')
-  input.innerHTML = text
+
+  input.innerHTML = JSON.stringify(resultObject)
   document.body.appendChild(input)
   input.select()
 
   const result = document.execCommand('copy')
+
   document.body.removeChild(input)
 
   return result
