@@ -1,41 +1,3 @@
-function setupConstants() {
-  const brands = ['ploom', 'iqos', 'glo']
-  const sources = ['youtube', 'instagram']
-
-  const instagramSelectors = {
-    rows: 'div[style*="width: 860px; height: 3"]',
-    header: '#socialblade-user-content > div:nth-child(3) > h2',
-    date: 'div[style="width: 80px; float: left;"]',
-    historySubscribers: 'div[style="width: 120px; float: left;"]',
-    summarySubscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
-    summaryMediaUploads: '#YouTubeUserTopInfoBlock > div:nth-child(2) > span:nth-child(3)',
-    historyMediaUploads: 'div:nth-child(4) > div:nth-child(2)',
-    engagementRate: '#YouTubeUserTopInfoBlock > div:nth-child(5) > span:nth-child(4)',
-    likes: '#YouTubeUserTopInfoBlock > div:nth-child(6) > span:nth-child(3)',
-    comments: '#YouTubeUserTopInfoBlock > div:nth-child(7) > span:nth-child(3)',
-    handle: '#YouTubeUserTopInfoBlockTop > div:nth-child(1) > h2 > a',
-  }
-
-  const youtubeSelectors = {
-    rows: 'div[style*="width: 860px; height: 3"]',
-    header: '#socialblade-user-content > div:nth-child(1) > div:nth-child(3) > h2',
-    date: 'div[style="float: left; width: 95px;"]',
-    subscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
-    videoViews: 'div:nth-child(4) > div:nth-child(2)[style="width: 140px; float: left;"]',
-  }
-
-  // Extract source from location.
-  const source = sources.find((source) => window.location.pathname.toLowerCase().includes(source))
-
-  return {
-    brands,
-    sources,
-    instagramSelectors,
-    youtubeSelectors,
-    source,
-  }
-}
-
 /**
  * Extension entry point. Extract all data.
  * Copy result JSON to buffer.
@@ -88,6 +50,48 @@ function getData() {
       history: [...historyData],
       statSummary: { ...getInstagramSummary(instagramSelectors) },
     }
+  }
+}
+
+/**
+ * Prepare all constants for extension.
+ * @return {Object} Constants for project.
+ */
+function setupConstants() {
+  const brands = ['ploom', 'iqos', 'glo']
+  const sources = ['youtube', 'instagram']
+
+  const instagramSelectors = {
+    rows: 'div[style*="width: 860px; height: 3"]',
+    header: '#socialblade-user-content > div:nth-child(3) > h2',
+    date: 'div[style="width: 80px; float: left;"]',
+    historySubscribers: 'div[style="width: 120px; float: left;"]',
+    summarySubscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
+    summaryMediaUploads: '#YouTubeUserTopInfoBlock > div:nth-child(2) > span:nth-child(3)',
+    historyMediaUploads: 'div:nth-child(4) > div:nth-child(2)',
+    engagementRate: '#YouTubeUserTopInfoBlock > div:nth-child(5) > span:nth-child(4)',
+    likes: '#YouTubeUserTopInfoBlock > div:nth-child(6) > span:nth-child(3)',
+    comments: '#YouTubeUserTopInfoBlock > div:nth-child(7) > span:nth-child(3)',
+    handle: '#YouTubeUserTopInfoBlockTop > div:nth-child(1) > h2 > a',
+  }
+
+  const youtubeSelectors = {
+    rows: 'div[style*="width: 860px; height: 3"]',
+    header: '#socialblade-user-content > div:nth-child(1) > div:nth-child(3) > h2',
+    date: 'div[style="float: left; width: 95px;"]',
+    subscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
+    videoViews: 'div:nth-child(4) > div:nth-child(2)[style="width: 140px; float: left;"]',
+  }
+
+  // Extract source from location.
+  const source = sources.find((source) => window.location.pathname.toLowerCase().includes(source))
+
+  return {
+    brands,
+    sources,
+    instagramSelectors,
+    youtubeSelectors,
+    source,
   }
 }
 
@@ -188,18 +192,6 @@ function getYoutubeData(row, header, brands, youtubeSelectors) {
 }
 
 /**
- * Convert scraped (str) date to numeric timestamp format.
- * By default convert to milliseconds, but we need in seconds.
- * So it need divide by 1000.
- * @param strDate Raw date string from page.
- * @return {number} Date in timestamp format in seconds.
- */
-function toTimestamp(strDate) {
-  const dateObj = Date.parse(strDate)
-  return dateObj / 1000
-}
-
-/**
  * Provide ability to copy data to buffer.
  * @param resultObject Object for copy.
  * @return {boolean}
@@ -216,4 +208,16 @@ function copy(resultObject) {
   document.body.removeChild(input)
 
   return result
+}
+
+/**
+ * Convert scraped (str) date to numeric timestamp format.
+ * By default convert to milliseconds, but we need in seconds.
+ * So it need divide by 1000.
+ * @param strDate Raw date string from page.
+ * @return {number} Date in timestamp format in seconds.
+ */
+function toTimestamp(strDate) {
+  const dateObj = Date.parse(strDate)
+  return dateObj / 1000
 }
