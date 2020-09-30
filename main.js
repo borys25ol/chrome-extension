@@ -5,11 +5,14 @@ const instagramSelectors = {
   rows: 'div[style*="width: 860px; height: 3"]',
   header: '#socialblade-user-content > div:nth-child(3) > h2',
   date: 'div[style="width: 80px; float: left;"]',
-  subscribers: 'div[style="width: 120px; float: left;"]',
-  mediaUploads: '#YouTubeUserTopInfoBlock > div:nth-child(2) > span:nth-child(3)',
+  historySubscribers: 'div[style="width: 120px; float: left;"]',
+  summarySubscribers: '#YouTubeUserTopInfoBlock > div:nth-child(3) > span:nth-child(3)',
+  summaryMediaUploads: '#YouTubeUserTopInfoBlock > div:nth-child(2) > span:nth-child(3)',
+  historyMediaUploads: 'div:nth-child(4) > div:nth-child(2)',
   engagementRate: '#YouTubeUserTopInfoBlock > div:nth-child(5) > span:nth-child(4)',
   likes: '#YouTubeUserTopInfoBlock > div:nth-child(6) > span:nth-child(3)',
   comments: '#YouTubeUserTopInfoBlock > div:nth-child(7) > span:nth-child(3)',
+  handle: '#YouTubeUserTopInfoBlockTop > div:nth-child(1) > h2 > a',
 }
 
 const youtubeSelectors = {
@@ -48,47 +51,66 @@ const source = sources.find((source) => window.location.pathname.toLowerCase().i
  * Extract data from table depends on `source`.
  * @param rows List with table rows selectors.
  * @param header SocialBlade block with info about source.
- * @return {[]} List with scraped objects from page.
+ * @return {{history: *[], statSummary: {}}}
+ * List with scraped objects from page.
  */
 function getData(rows, header) {
-  const results = []
+  const historyData = []
 
   // Get SocialBlade data.
-  for (const row of rows) {
-    if (source === 'instagram') {
-      results.push({
-        ...getInstagramData(row, header),
-      })
-    }
-
-    if (source === 'youtube') {
-      results.push({
+  if (source === 'youtube') {
+    for (const row of rows) {
+      historyData.push({
         ...getYoutubeData(row, header),
       })
     }
+
+    console.log({
+      history: [...historyData],
+      statSummary: {},
+    })
+
+    return {
+      history: [...historyData],
+      statSummary: {},
+    }
   }
 
-  console.log(results)
+  if (source === 'instagram') {
+    for (const row of rows) {
+      historyData.push({
+        ...getInstagramHistoryData(row, header),
+      })
+    }
 
-  return results
+    console.log({
+      history: [...historyData],
+      statSummary: { ...getInstagramSummary() },
+    })
+
+    return {
+      history: [...historyData],
+      statSummary: { ...getInstagramSummary() },
+    }
+  }
 }
 
 /**
- * Extract data for SocialBlade Instagram source.
+ * Extract history data for SocialBlade Instagram source.
  * @param row Table row selector.
  * @param header SocialBlade block with info about source.
  * @return {Object} Object with scraped data.
  */
-function getInstagramData(row, header) {
+function getInstagramHistoryData(row, header) {
   const date = row.querySelector(instagramSelectors.date).textContent
 
   // Clean up subscribers count.
-  const rawSubscribers = row.querySelector(instagramSelectors.subscribers).textContent.trim()
+  const rawSubscribers = row.querySelector(instagramSelectors.historySubscribers).textContent.trim()
   const intSubscribers = +rawSubscribers.replace(',', '')
 
   const currentBrand = brands.find((brand) => header.textContent.toLowerCase().includes(brand))
 
-  const mediaUploads = +document.querySelector(instagramSelectors.mediaUploads).textContent
+  const mediaUploads = +row.querySelector(instagramSelectors.historyMediaUploads).textContent
 
   // Clean up engagement.
   const rawEngagement = document.querySelector(instagramSelectors.engagementRate).textContent.trim()
@@ -98,20 +120,42 @@ function getInstagramData(row, header) {
 
   const avgComments = +document.querySelector(instagramSelectors.comments).textContent
 
+  const handle = document.querySelector(instagramSelectors.handle).textContent
+
   return {
-    date: toTimestamp(date),
-    subscribers: intSubscribers,
     brand: currentBrand,
-    mediaUploads,
-    engagement: intEngagementRate,
-    likes: avgLikes,
     comments: avgComments,
+    date: toTimestamp(date),
+    engagement: intEngagementRate,
+    handle,
+    likes: avgLikes,
+    mediaUploads,
     source,
+    followers: intSubscribers,
+    type: 'history',
   }
 }
 
 /**
- * Extract data for YouTube Instagram source.
+ * Extract summary data for SocialBlade Instagram source.
+ * @return {Object} Object with Instagram summary data.
+ */
+function getInstagramSummary() {
+  // Clean up subscribers count.
+  const rawSubscribers = document.querySelector(instagramSelectors.summarySubscribers).textContent
+  const intSubscribers = +rawSubscribers.trim().replace(',', '')
+
+  const mediaUploads = +document.querySelector(instagramSelectors.summaryMediaUploads).textContent
+
+  return {
+    date: toTimestamp(new Date().toISOString().slice(0, 10)),
+    followers: intSubscribers,
+    media: mediaUploads,
+  }
+}
+
+/**
+ * Extract history data for YouTube Instagram source.
  * @param row Table row selector.
  * @param header SocialBlade block with info about source.
  * @return {Object} Object with scraped data.
@@ -129,12 +173,17 @@ function getYoutubeData(row, header) {
   const rawSubscribers = document.querySelector(youtubeSelectors.subscribers).textContent.trim()
   const intSubscribers = rawSubscribers.replace('K', '')
 
+  const handleRegexp = /\/channel\/(.+?)\/monthly/
+  const handle = window.location.pathname.match(handleRegexp)[1]
+
   return {
-    date: toTimestamp(date),
-    subscribers: Math.ceil(parseFloat(intSubscribers) * 1000),
     brand: currentBrand,
-    videoViews: intVideoViews,
+    date: toTimestamp(date),
+    handle,
+    type: 'history',
     source,
+    subscribers: Math.ceil(parseFloat(intSubscribers) * 1000),
+    videoViews: intVideoViews,
   }
 }
 
